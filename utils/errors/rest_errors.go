@@ -31,3 +31,11 @@ func NewInternalServerError(message string) *RestErr {
 		Error:   "internal_server_error",
 	}
 }
+
+func NewDbError(message string, errMsg string) *RestErr {
+	return &RestErr{
+		Message: message,
+		Status:  http.StatusBadRequest,
+		Error:   errMsg,
+	}
+}
