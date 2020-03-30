@@ -7,8 +7,23 @@ import (
 	"github.com/nanoTitan/analytics-users-api/utils/errors"
 )
 
+var (
+	// UsersService - a usersService object
+	UsersService usersServiceInterface = &usersService{}
+)
+
+type usersService struct{}
+
+type usersServiceInterface interface {
+	GetUser(int64) (*users.User, *errors.RestErr)
+	CreateUser(users.User) (*users.User, *errors.RestErr)
+	UpdateUser(bool, users.User) (*users.User, *errors.RestErr)
+	DeleteUser(int64) *errors.RestErr
+	SearchUser(string) (users.Users, *errors.RestErr)
+}
+
 // GetUser - User service to get a user object through the data access object
-func GetUser(userID int64) (*users.User, *errors.RestErr) {
+func (s *usersService) GetUser(userID int64) (*users.User, *errors.RestErr) {
 	result := &users.User{Id: userID}
 	if err := result.Get(); err != nil {
 		return nil, err
@@ -18,7 +33,7 @@ func GetUser(userID int64) (*users.User, *errors.RestErr) {
 }
 
 // CreateUser - User service to create a user object through the data access object
-func CreateUser(user users.User) (*users.User, *errors.RestErr) {
+func (s *usersService) CreateUser(user users.User) (*users.User, *errors.RestErr) {
 	if err := user.Validate(); err != nil {
 		return nil, err
 	}
@@ -34,8 +49,8 @@ func CreateUser(user users.User) (*users.User, *errors.RestErr) {
 }
 
 // UpdateUser - User service to update a user object through the data access object
-func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) {
-	current, err := GetUser(user.Id)
+func (s *usersService) UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) {
+	current, err := s.GetUser(user.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -65,13 +80,13 @@ func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) 
 }
 
 // DeleteUser - delete a user object given a user ID
-func DeleteUser(usersID int64) *errors.RestErr {
+func (s *usersService) DeleteUser(usersID int64) *errors.RestErr {
 	user := &users.User{Id: usersID}
 	return user.Delete()
 }
 
 // Search - get rows of user objects given a status string
-func Search(status string) (users.Users, *errors.RestErr) {
+func (s *usersService) SearchUser(status string) (users.Users, *errors.RestErr) {
 	user := &users.User{}
 	return user.FindByStatus(status)
 }
