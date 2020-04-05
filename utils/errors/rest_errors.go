@@ -35,7 +35,7 @@ func NewNotFoundError(message string) *RestErr {
 	}
 }
 
-// NewNotFoundError - return a 500 internal server error given a message string
+// NewInternalServerError - return a 500 internal server error given a message string
 func NewInternalServerError(message string) *RestErr {
 	return &RestErr{
 		Message: message,
@@ -44,7 +44,7 @@ func NewInternalServerError(message string) *RestErr {
 	}
 }
 
-// NewBadRequestError - return a custom 400 bad request error given a message string and error message
+// NewDbError - return a custom 400 bad request error given a message string and error message
 func NewDbError(message string, errMsg string) *RestErr {
 	return &RestErr{
 		Message: message,

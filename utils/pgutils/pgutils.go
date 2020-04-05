@@ -14,9 +14,9 @@ const (
 // ParseError - parse a postgres REST service error given an error object
 func ParseError(err error) *errors.RestErr {
 	pgErr, ok := err.(*pq.Error)
-	if !ok {
+	if !ok || pgErr.Message == "" {
 		if strings.Contains(err.Error(), errorNoRows) {
-			return errors.NewNotFoundError("no record matching given id")
+			return errors.NewNotFoundError("no records found")
 		}
 		return errors.NewInternalServerError("error parsing database response")
 	}

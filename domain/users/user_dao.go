@@ -2,7 +2,6 @@ package users
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/nanoTitan/analytics-users-api/logger"
 
@@ -13,11 +12,12 @@ import (
 )
 
 const (
-	queryInsertUser       = `INSERT INTO users (first_name, last_name, email, date_created, status, password) VALUES ($1, $2, $3, $4, $5, $6)RETURNING id`
-	queryGetUser          = ` id, first_name, last_name, email, date_created, status FROM users WHERE id=$1`
-	queryUpdateUser       = `UPDATE users SET first_name=$2, last_name=$3, email=$4, status=$5 WHERE id=$1`
-	queryDeleteUser       = `DELETE FROM users WHERE id=$1`
-	queryFindUserByStatus = `SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=$1;`
+	queryInsertUser             = `INSERT INTO users (first_name, last_name, email, date_created, status, password) VALUES ($1, $2, $3, $4, $5, $6)RETURNING id`
+	queryGetUser                = ` id, first_name, last_name, email, date_created, status FROM users WHERE id=$1`
+	queryUpdateUser             = `UPDATE users SET first_name=$2, last_name=$3, email=$4, status=$5 WHERE id=$1`
+	queryDeleteUser             = `DELETE FROM users WHERE id=$1`
+	queryFindByStatus           = `SELECT id, first_name, last_name, email, date_created, status FROM users WHERE status=$1;`
+	queryFindByEmailAndPassword = "SELECT id, first_name, last_name, email, date_created, status FROM users WHERE email=$1 AND password=$2"
 
 	indexUniqueEmail = "users_email_key"
 	errorNoRows      = "no rows in result set"
@@ -40,7 +40,6 @@ func (user *User) Get() *errors.RestErr {
 		return pgutils.ParseError(scanErr)
 	}
 
-	log.Println(fmt.Sprintf("getting userId %d", user.Id))
 	return nil
 }
 
@@ -106,7 +105,7 @@ func (user *User) Delete() *errors.RestErr {
 
 // FindByStatus - query user rows given a status value
 func (user *User) FindByStatus(status string) ([]User, *errors.RestErr) {
-	stmt, err := usersdb.Client.Prepare(queryFindUserByStatus)
+	stmt, err := usersdb.Client.Prepare(queryFindByStatus)
 	if err != nil {
 		logger.Error("error when trying to prepare find users by status statement", err)
 		return nil, errors.NewInternalServerError(err.Error())
@@ -134,4 +133,23 @@ func (user *User) FindByStatus(status string) ([]User, *errors.RestErr) {
 		return nil, errors.NewNotFoundError(fmt.Sprintf("no users matching status %s", status))
 	}
 	return results, nil
+}
+
+/*
+FindByEmailAndPassword - Get the user given an email and password
+*/
+func (user *User) FindByEmailAndPassword() *errors.RestErr {
+	stmt, err := usersdb.Client.Prepare(queryFindByEmailAndPassword)
+	if err != nil {
+		logger.Error("error when trying to prepare get user by email and password statement", err)
+		return errors.NewInternalServerError("database error")
+	}
+	defer stmt.Close()
+
+	result := stmt.QueryRow(user.Email, user.Password)
+	if getErr := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated, &user.Status); getErr != nil {
+		logger.Error("error when trying to get user by email and password", getErr)
+		return pgutils.ParseError(getErr)
+	}
+	return nil
 }
